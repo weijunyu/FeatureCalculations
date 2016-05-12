@@ -29,7 +29,7 @@ public class Features {
         gyroMatrix = new Matrix(gyroArray);
     }
 
-    private double[] getMean(LinkedList<double[]> sample) {
+    public double[] getMean(LinkedList<double[]> sample) {
         DescriptiveStatistics xStats = new DescriptiveStatistics();
         DescriptiveStatistics yStats = new DescriptiveStatistics();
         DescriptiveStatistics zStats = new DescriptiveStatistics();
@@ -41,7 +41,7 @@ public class Features {
         return new double[] { xStats.getMean(), yStats.getMean(), zStats.getMean() };
     }
 
-    private double[] getStdDev(LinkedList<double[]> sample) {
+    public double[] getStdDev(LinkedList<double[]> sample) {
         DescriptiveStatistics xStats = new DescriptiveStatistics();
         DescriptiveStatistics yStats = new DescriptiveStatistics();
         DescriptiveStatistics zStats = new DescriptiveStatistics();
@@ -57,7 +57,10 @@ public class Features {
         };
     }
 
-    private double[] getSkewness(LinkedList<double[]> sample) {
+    public double[] getSkewness(LinkedList<double[]> sample) {
+//        double[] means = getMean(sample); // [xMean, yMean, zMean]
+//        double[] stdDev = getStdDev(sample); // [xSD, ySD, zSD]
+
         DescriptiveStatistics xStats = new DescriptiveStatistics();
         DescriptiveStatistics yStats = new DescriptiveStatistics();
         DescriptiveStatistics zStats = new DescriptiveStatistics();
@@ -73,7 +76,7 @@ public class Features {
         };
     }
 
-    private double[] getKurtosis(LinkedList<double[]> sample) {
+    public double[] getKurtosis(LinkedList<double[]> sample) {
         DescriptiveStatistics xStats = new DescriptiveStatistics();
         DescriptiveStatistics yStats = new DescriptiveStatistics();
         DescriptiveStatistics zStats = new DescriptiveStatistics();
@@ -89,26 +92,26 @@ public class Features {
         };
     }
 
-    private double getL1Norm(Matrix sampleMatrix) {
+    public double getL1Norm(Matrix sampleMatrix) {
         return sampleMatrix.norm1();
     }
 
-    private double getInfNorm(Matrix sampleMatrix) {
+    public double getInfNorm(Matrix sampleMatrix) {
         return sampleMatrix.normInf();
     }
 
-    private double getFroNorm(Matrix sampleMatrix) {
+    public double getFroNorm(Matrix sampleMatrix) {
         return sampleMatrix.normF();
     }
 
-    private double[] getPearsonCoeff(LinkedList<double[]> linAccSample, LinkedList<double[]> gyroSample) {
+    public double[] getPearsonCoeff(LinkedList<double[]> linAccSample, LinkedList<double[]> gyroSample) {
         // Get each list of sensor values as an array
-        double[] xLinAccValues = new double[15],
-                yLinAccValues = new double[15],
-                zLinAccValues = new double[15],
-                xGyroValues = new double[15],
-                yGyroValues = new double[15],
-                zGyroValues = new double[15];
+        double[] xLinAccValues = new double[linAccSample.size()],
+                yLinAccValues = new double[linAccSample.size()],
+                zLinAccValues = new double[linAccSample.size()],
+                xGyroValues = new double[linAccSample.size()],
+                yGyroValues = new double[linAccSample.size()],
+                zGyroValues = new double[linAccSample.size()];
         for (int i = 0; i < linAccSample.size(); i++) {
             xLinAccValues[i] = linAccSample.get(i)[0];
             yLinAccValues[i] = linAccSample.get(i)[1];
@@ -140,7 +143,7 @@ public class Features {
         return coefficients;
     }
 
-    private double getAngle(LinkedList<double[]> linAccSample) {
+    public double getAngle(LinkedList<double[]> linAccSample) {
         double max_magnitude = 0, xMax = 0, yMax = 0;
         for (double[] sample : linAccSample) {
             double magnitude = Math.sqrt(Math.pow(sample[0], 2) + Math.pow(sample[1], 2));
