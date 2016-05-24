@@ -92,6 +92,61 @@ public class Features {
         };
     }
 
+    public double[] getRMS(LinkedList<double[]> sample) {
+        DescriptiveStatistics xStats = new DescriptiveStatistics();
+        DescriptiveStatistics yStats = new DescriptiveStatistics();
+        DescriptiveStatistics zStats = new DescriptiveStatistics();
+        for (double[] sensorValues : sample) {
+            xStats.addValue(sensorValues[0]);
+            yStats.addValue(sensorValues[1]);
+            zStats.addValue(sensorValues[2]);
+        }
+        return new double[] { xStats.getQuadraticMean(), yStats.getQuadraticMean(), zStats.getQuadraticMean() };
+    }
+
+    public double[] getP2p(LinkedList<double[]> sample) {
+        DescriptiveStatistics xStats = new DescriptiveStatistics();
+        DescriptiveStatistics yStats = new DescriptiveStatistics();
+        DescriptiveStatistics zStats = new DescriptiveStatistics();
+        for (double[] sensorValues : sample) {
+            xStats.addValue(sensorValues[0]);
+            yStats.addValue(sensorValues[1]);
+            zStats.addValue(sensorValues[2]);
+        }
+        double[] minValues = new double[] { xStats.getMin(), yStats.getMin(), zStats.getMin() };
+        double[] maxValues = new double[] { xStats.getMax(), yStats.getMax(), zStats.getMax() };
+
+        return new double[] {
+                Math.abs(minValues[0] - maxValues[0]),
+                Math.abs(minValues[1] - maxValues[1]),
+                Math.abs(minValues[2] - maxValues[2])
+        };
+    }
+
+    public double[] getMin(LinkedList<double[]> sample) {
+        DescriptiveStatistics xStats = new DescriptiveStatistics();
+        DescriptiveStatistics yStats = new DescriptiveStatistics();
+        DescriptiveStatistics zStats = new DescriptiveStatistics();
+        for (double[] sensorValues : sample) {
+            xStats.addValue(sensorValues[0]);
+            yStats.addValue(sensorValues[1]);
+            zStats.addValue(sensorValues[2]);
+        }
+        return new double[] { xStats.getMin(), yStats.getMin(), zStats.getMin() };
+    }
+
+    public double[] getMax(LinkedList<double[]> sample) {
+        DescriptiveStatistics xStats = new DescriptiveStatistics();
+        DescriptiveStatistics yStats = new DescriptiveStatistics();
+        DescriptiveStatistics zStats = new DescriptiveStatistics();
+        for (double[] sensorValues : sample) {
+            xStats.addValue(sensorValues[0]);
+            yStats.addValue(sensorValues[1]);
+            zStats.addValue(sensorValues[2]);
+        }
+        return new double[] { xStats.getMax(), yStats.getMax(), zStats.getMax() };
+    }
+
     public double getL1Norm(Matrix sampleMatrix) {
         return sampleMatrix.norm1();
     }
@@ -368,6 +423,278 @@ public class Features {
                 angle,
                 linAccMeans, linAccStdDevs, linAccSkewness, linAccKurtosis, linAccNorms,
                 gyroMeans, gyroStdDevs, gyroSkewness, gyroKurtosis, gyroNorms,
+                pearsonCoeffs);
+
+        StringBuilder featureString = new StringBuilder();
+        for (int i = 0; i < featureArray.length; i++) {
+            featureString.append(i+1);
+            featureString.append(':');
+            featureString.append(featureArray[i]);
+            featureString.append(' ');
+        }
+        return featureString.toString();
+    }
+
+    public String getTapOccurrenceFeaturesComb() {
+//        Standard features, lin acc before gyro:
+//        1. means
+//        2. standard dev
+//        3. skewness
+//        4. kurtosis
+//        5. l1 norm
+//        6. infinite norm
+//        7. frobenius norm
+//
+//        lastly:
+//        8. pearson coefficients
+
+        // 15 + 12 linear accelerometer features (means etc across 3 axes)
+        double[] linAccMeans = getMean(linAccSample);
+        double[] linAccStdDevs = getStdDev(linAccSample);
+        double[] linAccSkewness = getSkewness(linAccSample);
+        double[] linAccKurtosis = getKurtosis(linAccSample);
+
+        double linAcc1Norm = getL1Norm(linAccMatrix);
+        double linAccInfNorm = getInfNorm(linAccMatrix);
+        double linAccFroNorm = getFroNorm(linAccMatrix);
+        double[] linAccNorms = new double[]{linAcc1Norm, linAccInfNorm, linAccFroNorm};
+
+        double[] linAccRMS = getRMS(linAccSample);
+        double[] linAccP2p = getP2p(linAccSample);
+        double[] linAccMin = getMin(linAccSample);
+        double[] linAccMax = getMax(linAccSample);
+
+        // 15 + 12 gyroscope features
+        double[] gyroMeans = getMean(gyroSample);
+        double[] gyroStdDevs = getStdDev(gyroSample);
+        double[] gyroSkewness = getSkewness(gyroSample);
+        double[] gyroKurtosis = getKurtosis(gyroSample);
+
+        double gyro1Norm = getL1Norm(gyroMatrix);
+        double gyroInfNorm = getInfNorm(gyroMatrix);
+        double gyroFroNorm = getFroNorm(gyroMatrix);
+        double[] gyroNorms = new double[] {gyro1Norm, gyroInfNorm, gyroFroNorm};
+
+        double[] gyroRMS = getRMS(gyroSample);
+        double[] gyroP2p = getP2p(gyroSample);
+        double[] gyroMin = getMin(gyroSample);
+        double[] gyroMax = getMax(gyroSample);
+
+        // 9 pearson features
+        double[] pearsonCoeffs = getPearsonCoeff(linAccSample, gyroSample);
+
+        double[] featureArray = merge(
+                linAccMeans, linAccStdDevs, linAccSkewness, linAccKurtosis, linAccNorms,
+                linAccRMS, linAccP2p, linAccMin, linAccMax,
+                gyroMeans, gyroStdDevs, gyroSkewness, gyroKurtosis, gyroNorms,
+                gyroRMS, gyroP2p, gyroMin, gyroMax,
+                pearsonCoeffs);
+
+        StringBuilder featureString = new StringBuilder();
+        for (int i = 0; i < featureArray.length; i++) {
+            featureString.append(i+1);
+            featureString.append(':');
+            featureString.append(featureArray[i]);
+            featureString.append(' ');
+        }
+        return featureString.toString();
+    }
+
+    public String getHoldingHandFeaturesComb() {
+//        First angles
+//        1. Impact angle
+//        Standard features, lin acc before gyro:
+//        2. means
+//        3. standard dev
+//        4. skewness
+//        5. kurtosis
+//        6. l1 norm
+//        7. infinite norm
+//        8. frobenius norm
+//
+//        lastly:
+//        9. pearson coefficients
+        double[] angle = new double[] {getAngle(linAccSample)};
+
+        // 15 + 12 linear accelerometer features (means etc across 3 axes)
+        double[] linAccMeans = getMean(linAccSample);
+        double[] linAccStdDevs = getStdDev(linAccSample);
+        double[] linAccSkewness = getSkewness(linAccSample);
+        double[] linAccKurtosis = getKurtosis(linAccSample);
+
+        double linAcc1Norm = getL1Norm(linAccMatrix);
+        double linAccInfNorm = getInfNorm(linAccMatrix);
+        double linAccFroNorm = getFroNorm(linAccMatrix);
+        double[] linAccNorms = new double[]{linAcc1Norm, linAccInfNorm, linAccFroNorm};
+
+        double[] linAccRMS = getRMS(linAccSample);
+        double[] linAccP2p = getP2p(linAccSample);
+        double[] linAccMin = getMin(linAccSample);
+        double[] linAccMax = getMax(linAccSample);
+
+        // 15 + 12 gyroscope features
+        double[] gyroMeans = getMean(gyroSample);
+        double[] gyroStdDevs = getStdDev(gyroSample);
+        double[] gyroSkewness = getSkewness(gyroSample);
+        double[] gyroKurtosis = getKurtosis(gyroSample);
+
+        double gyro1Norm = getL1Norm(gyroMatrix);
+        double gyroInfNorm = getInfNorm(gyroMatrix);
+        double gyroFroNorm = getFroNorm(gyroMatrix);
+        double[] gyroNorms = new double[] {gyro1Norm, gyroInfNorm, gyroFroNorm};
+
+        double[] gyroRMS = getRMS(gyroSample);
+        double[] gyroP2p = getP2p(gyroSample);
+        double[] gyroMin = getMin(gyroSample);
+        double[] gyroMax = getMax(gyroSample);
+
+        // 9 pearson features
+        double[] pearsonCoeffs = getPearsonCoeff(linAccSample, gyroSample);
+
+        double[] featureArray = merge(
+                angle,
+                linAccMeans, linAccStdDevs, linAccSkewness, linAccKurtosis, linAccNorms,
+                linAccRMS, linAccP2p, linAccMin, linAccMax,
+                gyroMeans, gyroStdDevs, gyroSkewness, gyroKurtosis, gyroNorms,
+                gyroRMS, gyroP2p, gyroMin, gyroMax,
+                pearsonCoeffs);
+
+        StringBuilder featureString = new StringBuilder();
+        for (int i = 0; i < featureArray.length; i++) {
+            featureString.append(i+1);
+            featureString.append(':');
+            featureString.append(featureArray[i]);
+            featureString.append(' ');
+        }
+        return featureString.toString();
+    }
+
+    public String getLHandLocFeaturesComb() {
+//        First angles
+//        1. Impact angle
+//        Standard features, lin acc before gyro:
+//        2. means
+//        3. standard dev
+//        4. skewness
+//        5. kurtosis
+//        6. l1 norm
+//        7. infinite norm
+//        8. frobenius norm
+//
+//        lastly:
+//        9. pearson coefficients
+        double[] angle = new double[] {getAngle(linAccSample)};
+
+        // 15 + 12 linear accelerometer features (means etc across 3 axes)
+        double[] linAccMeans = getMean(linAccSample);
+        double[] linAccStdDevs = getStdDev(linAccSample);
+        double[] linAccSkewness = getSkewness(linAccSample);
+        double[] linAccKurtosis = getKurtosis(linAccSample);
+
+        double linAcc1Norm = getL1Norm(linAccMatrix);
+        double linAccInfNorm = getInfNorm(linAccMatrix);
+        double linAccFroNorm = getFroNorm(linAccMatrix);
+        double[] linAccNorms = new double[]{linAcc1Norm, linAccInfNorm, linAccFroNorm};
+
+        double[] linAccRMS = getRMS(linAccSample);
+        double[] linAccP2p = getP2p(linAccSample);
+        double[] linAccMin = getMin(linAccSample);
+        double[] linAccMax = getMax(linAccSample);
+
+        // 15 + 12 gyroscope features
+        double[] gyroMeans = getMean(gyroSample);
+        double[] gyroStdDevs = getStdDev(gyroSample);
+        double[] gyroSkewness = getSkewness(gyroSample);
+        double[] gyroKurtosis = getKurtosis(gyroSample);
+
+        double gyro1Norm = getL1Norm(gyroMatrix);
+        double gyroInfNorm = getInfNorm(gyroMatrix);
+        double gyroFroNorm = getFroNorm(gyroMatrix);
+        double[] gyroNorms = new double[] {gyro1Norm, gyroInfNorm, gyroFroNorm};
+
+        double[] gyroRMS = getRMS(gyroSample);
+        double[] gyroP2p = getP2p(gyroSample);
+        double[] gyroMin = getMin(gyroSample);
+        double[] gyroMax = getMax(gyroSample);
+
+        // 9 pearson features
+        double[] pearsonCoeffs = getPearsonCoeff(linAccSample, gyroSample);
+
+        double[] featureArray = merge(
+                angle,
+                linAccMeans, linAccStdDevs, linAccSkewness, linAccKurtosis, linAccNorms,
+                linAccRMS, linAccP2p, linAccMin, linAccMax,
+                gyroMeans, gyroStdDevs, gyroSkewness, gyroKurtosis, gyroNorms,
+                gyroRMS, gyroP2p, gyroMin, gyroMax,
+                pearsonCoeffs);
+
+        StringBuilder featureString = new StringBuilder();
+        for (int i = 0; i < featureArray.length; i++) {
+            featureString.append(i+1);
+            featureString.append(':');
+            featureString.append(featureArray[i]);
+            featureString.append(' ');
+        }
+        return featureString.toString();
+    }
+
+    public String getRHandLocFeaturesComb() {
+//        First angles
+//        1. Impact angle
+//        Standard features, lin acc before gyro:
+//        2. means
+//        3. standard dev
+//        4. skewness
+//        5. kurtosis
+//        6. l1 norm
+//        7. infinite norm
+//        8. frobenius norm
+//
+//        lastly:
+//        9. pearson coefficients
+        double[] angle = new double[] {getAngle(linAccSample)};
+
+        // 15 + 12 linear accelerometer features (means etc across 3 axes)
+        double[] linAccMeans = getMean(linAccSample);
+        double[] linAccStdDevs = getStdDev(linAccSample);
+        double[] linAccSkewness = getSkewness(linAccSample);
+        double[] linAccKurtosis = getKurtosis(linAccSample);
+
+        double linAcc1Norm = getL1Norm(linAccMatrix);
+        double linAccInfNorm = getInfNorm(linAccMatrix);
+        double linAccFroNorm = getFroNorm(linAccMatrix);
+        double[] linAccNorms = new double[]{linAcc1Norm, linAccInfNorm, linAccFroNorm};
+
+        double[] linAccRMS = getRMS(linAccSample);
+        double[] linAccP2p = getP2p(linAccSample);
+        double[] linAccMin = getMin(linAccSample);
+        double[] linAccMax = getMax(linAccSample);
+
+        // 15 + 12 gyroscope features
+        double[] gyroMeans = getMean(gyroSample);
+        double[] gyroStdDevs = getStdDev(gyroSample);
+        double[] gyroSkewness = getSkewness(gyroSample);
+        double[] gyroKurtosis = getKurtosis(gyroSample);
+
+        double gyro1Norm = getL1Norm(gyroMatrix);
+        double gyroInfNorm = getInfNorm(gyroMatrix);
+        double gyroFroNorm = getFroNorm(gyroMatrix);
+        double[] gyroNorms = new double[] {gyro1Norm, gyroInfNorm, gyroFroNorm};
+
+        double[] gyroRMS = getRMS(gyroSample);
+        double[] gyroP2p = getP2p(gyroSample);
+        double[] gyroMin = getMin(gyroSample);
+        double[] gyroMax = getMax(gyroSample);
+
+        // 9 pearson features
+        double[] pearsonCoeffs = getPearsonCoeff(linAccSample, gyroSample);
+
+        double[] featureArray = merge(
+                angle,
+                linAccMeans, linAccStdDevs, linAccSkewness, linAccKurtosis, linAccNorms,
+                linAccRMS, linAccP2p, linAccMin, linAccMax,
+                gyroMeans, gyroStdDevs, gyroSkewness, gyroKurtosis, gyroNorms,
+                gyroRMS, gyroP2p, gyroMin, gyroMax,
                 pearsonCoeffs);
 
         StringBuilder featureString = new StringBuilder();

@@ -57,11 +57,15 @@ public class RunCalculations {
         System.out.println(Arrays.toString(features.getStdDev(linAccSamples))); // okay
         System.out.println(Arrays.toString(features.getSkewness(linAccSamples))); // need to change scipy call:bias=False
         System.out.println(Arrays.toString(features.getKurtosis(linAccSamples))); // need to change scipy call: bias=False
+        System.out.println(Arrays.toString(features.getRMS(linAccSamples)));
+        System.out.println(Arrays.toString(features.getP2p(linAccSamples)));
+        System.out.println(Arrays.toString(features.getMin(linAccSamples)));
+        System.out.println(Arrays.toString(features.getMax(linAccSamples)));
         System.out.println(features.getL1Norm(linAccMatrix)); // okay
         System.out.println(features.getInfNorm(linAccMatrix)); // okay
         System.out.println(features.getFroNorm(linAccMatrix)); // okay, difference is negligible.
         System.out.println(Arrays.toString(features.getPearsonCoeff(linAccSamples, gyroSamples))); // okay
-//        System.out.println(features.getAngle(linAccSamples));
+        System.out.println(features.getAngle(linAccSamples));
 //        System.out.println(features.getTapOccurrenceFeatures());
     }
 }
